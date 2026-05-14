@@ -1,0 +1,311 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sex {
+  MASCULINO
+  FEMENINO
+}
+
+enum AppointmentStatus {
+  PENDIENTE
+  COMPLETADO
+  CANCELADO
+}
+
+// ─────────────────────────────────────────────
+// MULTI-TENANCY: Each clinic is a tenant
+// ─────────────────────────────────────────────
+model Clinic {
+  id        Int     @id @default(autoincrement())
+  name      String
+  rif       String?
+  address   String?
+  phone     String?
+  isActive  Boolean @default(true)
+
+  users         User[]
+  patients      Patient[]
+  doctors       Doctor[]
+  assistants    Assistant[]
+  offices       Office[]
+  appointments  Appointment[]
+  consultations Consultation[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("clinics")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // 'SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'ASSISTANT'
+  permissions Json?
+  users       User[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  roleId   Int    @map("role_id")
+  role     Role   @relation(fields: [roleId], references: [id])
+  doctor   Doctor?
+  assistant Assistant?
+
+  // clinicId is nullable: SUPER_ADMIN does not belong to any specific clinic
+  clinicId Int?    @map("clinic_id")
+  clinic   Clinic? @relation(fields: [clinicId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Patient {
+  id             Int             @id @default(autoincrement())
+  clinicId       Int             @map("clinic_id")
+  clinic         Clinic          @relation(fields: [clinicId], references: [id])
+  firstName      String          @map("first_name")
+  lastName       String          @map("last_name")
+  // DNI unique per clinic (same patient could exist in two different clinics)
+  dni            String
+  dateOfBirth    DateTime        @map("date_of_birth")
+  sex            Sex
+  phone          String?
+  email          String?
+  medicalHistory MedicalHistory?
+  appointments   Appointment[]
+  consultations  Consultation[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@unique([dni, clinicId])
+  @@map("patients")
+}
+
+model MedicalHistory {
+  id        Int @id @default(autoincrement())
+  patientId Int @unique @map("patient_id")
+
+  // Antecedentes Familiares
+  fatherHistory      String?  @db.Text @map("father_history")
+  fatherIsAlive      Boolean  @default(true) @map("father_is_alive")
+  fatherCauseOfDeath String?  @db.Text @map("father_cause_of_death")
+
+  motherHistory      String?  @db.Text @map("mother_history")
+  motherIsAlive      Boolean  @default(true) @map("mother_is_alive")
+  motherCauseOfDeath String?  @db.Text @map("mother_cause_of_death")
+
+  // Antecedentes Personales
+  bloodType       String? @map("blood_type")
+  chronicDiseases String? @db.Text @map("chronic_diseases")
+  surgeries       String? @db.Text
+
+  // Hábitos Tóxicos
+  sedentary        Boolean @default(false)
+  alcohol          Boolean @default(false)
+  smoking          Boolean @default(false)
+  drugs            Boolean @default(false)
+  otherToxicHabits String? @db.Text @map("other_toxic_habits")
+
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("medical_histories")
+}
+
+model Doctor {
+  id               Int    @id @default(autoincrement())
+  clinicId         Int    @map("clinic_id")
+  clinic           Clinic @relation(fields: [clinicId], references: [id])
+  userId           Int?   @unique @map("user_id")
+  user             User?  @relation(fields: [userId], references: [id])
+  firstName        String @map("first_name")
+  lastName         String @map("last_name")
+  specialty        String
+  otherSpecialties String? @map("other_specialties")
+  
+  rif              String?
+  phone            String?
+  contactEmail     String? @map("contact_email")
+  
+  // License unique per clinic (same doctor could work in two clinics)
+  medicalLicense   String  @map("medical_license")
+  appointments     Appointment[]
+  consultations    Consultation[]
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([medicalLicense, clinicId])
+  @@map("doctors")
+}
+
+model Assistant {
+  id               Int    @id @default(autoincrement())
+  clinicId         Int    @map("clinic_id")
+  clinic           Clinic @relation(fields: [clinicId], references: [id])
+  userId           Int?   @unique @map("user_id")
+  user             User?  @relation(fields: [userId], references: [id])
+  firstName        String @map("first_name")
+  lastName         String @map("last_name")
+  dni              String
+  phone            String?
+  schedule         String? @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([dni, clinicId])
+  @@map("assistants")
+}
+
+model Office {
+  id           Int    @id @default(autoincrement())
+  clinicId     Int    @map("clinic_id")
+  clinic       Clinic @relation(fields: [clinicId], references: [id])
+  name         String
+  location     String?
+  appointments Appointment[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("offices")
+}
+
+enum AppointmentType {
+  PRIMERA_VEZ
+  CONTROL
+  EMERGENCIA
+  PROCEDIMIENTO
+}
+
+model Appointment {
+  id          Int               @id @default(autoincrement())
+  clinicId    Int               @map("clinic_id")
+  clinic      Clinic            @relation(fields: [clinicId], references: [id])
+  patientId   Int               @map("patient_id")
+  doctorId    Int               @map("doctor_id")
+  officeId    Int               @map("office_id")
+  
+  datetime    DateTime
+  duration    Int               @default(30)
+  type        AppointmentType   @default(CONTROL)
+  status      AppointmentStatus @default(PENDIENTE)
+  isConfirmed Boolean           @default(false)
+  notes       String?           @db.Text
+
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  office       Office        @relation(fields: [officeId], references: [id])
+  consultation Consultation?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("appointments")
+}
+
+model Consultation {
+  id            Int    @id @default(autoincrement())
+  clinicId      Int    @map("clinic_id")
+  clinic        Clinic @relation(fields: [clinicId], references: [id])
+  appointmentId Int?   @unique @map("appointment_id")
+  patientId     Int    @map("patient_id")
+  doctorId      Int    @map("doctor_id")
+  datetime      DateTime @default(now())
+
+  // Triaje
+  weight        Float?
+  height        Float?
+  bloodPressure String? @map("blood_pressure")
+  heartRate     Int?    @map("heart_rate")
+  occupation    String?
+  reason        String  @db.Text
+  symptoms      String? @db.Text
+
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
+  patient        Patient      @relation(fields: [patientId], references: [id])
+  doctor         Doctor       @relation(fields: [doctorId], references: [id])
+
+  findings       Finding[]
+  diagnoses      Diagnosis[]
+  treatments     Treatment[]
+  examsRequested Exam[]       @relation("RequestedExams")
+  examsAnalyzed  Exam[]       @relation("AnalyzedExams")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("consultations")
+}
+
+// ─────────────────────────────────────────────
+// Children of Consultation — NO clinicId needed
+// Isolation is inherited through consultationId
+// ─────────────────────────────────────────────
+model Finding {
+  id             Int          @id @default(autoincrement())
+  consultationId Int          @map("consultation_id")
+  description    String       @db.Text
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+
+  @@map("findings")
+}
+
+model Diagnosis {
+  id             Int          @id @default(autoincrement())
+  consultationId Int          @map("consultation_id")
+  description    String       @db.Text
+  codeCIE10      String?      @map("code_cie10")
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+
+  @@map("diagnoses")
+}
+
+model Treatment {
+  id             Int          @id @default(autoincrement())
+  consultationId Int          @map("consultation_id")
+  medication     String
+  dosage         String?
+  instructions   String?      @db.Text
+  consultation   Consultation @relation(fields: [consultationId], references: [id])
+
+  @@map("treatments")
+}
+
+enum ExamTypes {
+  LABORATORIO
+  IMAGNES
+  OTROS
+}
+
+model Exam {
+  id                        Int          @id @default(autoincrement())
+  name                      String
+  type                      ExamTypes    @default(LABORATORIO) 
+  requestedInConsultationId Int          @map("requested_in_consultation_id")
+  analyzedInConsultationId  Int?         @map("analyzed_in_consultation_id")
+  status                    String       @default("PENDING")
+  referenceValues           String?      
+  results                   String?      @db.Text
+
+  requestedInConsultation   Consultation  @relation("RequestedExams", fields: [requestedInConsultationId], references: [id])
+  analyzedInConsultation    Consultation? @relation("AnalyzedExams", fields: [analyzedInConsultationId], references: [id])
+
+  @@map("exams")
+}

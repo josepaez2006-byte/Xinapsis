@@ -1,0 +1,279 @@
+/* ConsultationPrintPage.css */
+
+/* Por defecto, si el usuario navega a la URL de impresión, le mostramos algo limpio y minimalista. */
+.print-preview-container {
+  background: #f1f5f9;
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Simulación de una hoja de papel en la pantalla */
+.paper-sheet {
+  background: white;
+  width: 21cm; /* Tamaño carta/A4 aproximado */
+  min-height: 29.7cm;
+  padding: 2.5cm;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  position: relative;
+}
+
+.print-loading {
+  text-align: center;
+  padding: 5rem;
+  font-size: 1.25rem;
+  color: #64748b;
+}
+
+/* ────────────────────────────────────────────────────────
+   ESTILOS ESPECÍFICOS PARA LA IMPRESORA
+   ──────────────────────────────────────────────────────── */
+@media print {
+  /* Ocultar barra de scroll y fondo del body al imprimir */
+  body {
+    background: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .print-preview-container {
+    background: none;
+    padding: 0;
+    display: block;
+  }
+
+  .paper-sheet {
+    box-shadow: none;
+    width: 100%;
+    min-height: 100%;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Opcional: configurar página general (tamaño carta, márgenes) */
+  @page {
+    size: letter;
+    margin: 2cm;
+  }
+  
+  /* Asegurar que las secciones no se rompan a la mitad de una página si es posible */
+  .print-section {
+    page-break-inside: avoid;
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   TIPOGRAFÍA Y DISEÑO DEL DOCUMENTO
+   ──────────────────────────────────────────────────────── */
+
+.print-header {
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.clinic-logo-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #0f172a;
+}
+
+.clinic-logo-placeholder .logo-box {
+  width: 50px;
+  height: 50px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.clinic-logo-placeholder h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.clinic-logo-placeholder p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.document-title {
+  text-align: right;
+}
+
+.document-title h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.document-title p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Información del Paciente y Doctor */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  background: #f8fafc;
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.info-box p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.info-box p strong {
+  color: #0f172a;
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* Secciones genéricas (Triaje, Hallazgos, Recetas) */
+.print-section {
+  margin-bottom: 2rem;
+}
+
+.section-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Grillas para signos vitales */
+.vital-signs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.vital-sign-item {
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.vital-sign-item .label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.vital-sign-item .value {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Listas y textos descriptivos */
+.print-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #334155;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+
+.print-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.print-list-item {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.print-list-item::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.print-list-item strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.print-list-item p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+/* Firmas */
+.print-footer {
+  margin-top: 4rem;
+  display: flex;
+  justify-content: flex-end;
+  page-break-inside: avoid;
+}
+
+.signature-box {
+  text-align: center;
+  width: 250px;
+}
+
+.signature-line {
+  border-top: 1px solid #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.signature-box p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.signature-box strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1rem;
+}
