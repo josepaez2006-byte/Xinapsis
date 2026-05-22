@@ -32,7 +32,7 @@ async function main() {
   console.log(`✅ Role created/verified: ${superAdminRole.name}`);
 
   // 2. Also ensure the other operational roles exist
-  for (const roleName of ['ADMIN', 'DOCTOR', 'ASSISTANT']) {
+  for (const roleName of ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY']) {
     await prisma.role.upsert({
       where: { name: roleName },
       update: {},

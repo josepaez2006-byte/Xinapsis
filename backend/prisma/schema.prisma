@@ -36,6 +36,8 @@ model Clinic {
   patients      Patient[]
   doctors       Doctor[]
   assistants    Assistant[]
+  laboratoryStaffs LaboratoryStaff[]
+  labExamTemplates LabExamTemplate[]
   offices       Office[]
   appointments  Appointment[]
   consultations Consultation[]
@@ -65,6 +67,7 @@ model User {
   role     Role   @relation(fields: [roleId], references: [id])
   doctor   Doctor?
   assistant Assistant?
+  laboratoryStaff LaboratoryStaff?
 
   // clinicId is nullable: SUPER_ADMIN does not belong to any specific clinic
   clinicId Int?    @map("clinic_id")
@@ -295,17 +298,60 @@ enum ExamTypes {
 }
 
 model Exam {
-  id                        Int          @id @default(autoincrement())
+  id                        Int            @id @default(autoincrement())
   name                      String
-  type                      ExamTypes    @default(LABORATORIO) 
-  requestedInConsultationId Int          @map("requested_in_consultation_id")
-  analyzedInConsultationId  Int?         @map("analyzed_in_consultation_id")
-  status                    String       @default("PENDING")
+  type                      ExamTypes      @default(LABORATORIO) 
+  requestedInConsultationId Int            @map("requested_in_consultation_id")
+  analyzedInConsultationId  Int?           @map("analyzed_in_consultation_id")
+  status                    String         @default("PENDING")
   referenceValues           String?      
-  results                   String?      @db.Text
+  results                   String?        @db.Text
+  labExamDetailId           Int?           @map("lab_exam_detail_id")
+  labExamDetail             LabExamDetail? @relation(fields: [labExamDetailId], references: [id])
 
-  requestedInConsultation   Consultation  @relation("RequestedExams", fields: [requestedInConsultationId], references: [id])
-  analyzedInConsultation    Consultation? @relation("AnalyzedExams", fields: [analyzedInConsultationId], references: [id])
+  requestedInConsultation   Consultation   @relation("RequestedExams", fields: [requestedInConsultationId], references: [id])
+  analyzedInConsultation    Consultation?  @relation("AnalyzedExams", fields: [analyzedInConsultationId], references: [id])
 
   @@map("exams")
+}
+
+model LaboratoryStaff {
+  id        Int      @id @default(autoincrement())
+  clinicId  Int      @map("clinic_id")
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  userId    Int?     @unique @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("laboratory_staffs")
+}
+
+model LabExamTemplate {
+  id        Int             @id @default(autoincrement())
+  clinicId  Int             @map("clinic_id")
+  clinic    Clinic          @relation(fields: [clinicId], references: [id])
+  name      String
+  details   LabExamDetail[]
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@unique([name, clinicId])
+  @@map("lab_exam_templates")
+}
+
+model LabExamDetail {
+  id                Int             @id @default(autoincrement())
+  labExamTemplateId Int             @map("lab_exam_template_id")
+  labExamTemplate   LabExamTemplate @relation(fields: [labExamTemplateId], references: [id], onDelete: Cascade)
+  name              String
+  referenceValue    String          @map("reference_value")
+  exams             Exam[]
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  @@map("lab_exam_details")
 }

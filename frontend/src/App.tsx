@@ -12,6 +12,8 @@ import { DoctorConsultations } from './pages/DoctorConsultations';
 import { PatientProfile } from './pages/PatientProfile';
 import { ConsultationPage } from './pages/ConsultationPage';
 import { ConsultationPrintPage } from './pages/ConsultationPrintPage';
+import { LabTemplates } from './pages/LabTemplates';
+import { LabResults } from './pages/LabResults';
 
 const ProtectedRoute = () => {
   const { token } = useAuth();
@@ -36,6 +38,10 @@ const DashboardHome = () => {
   
   if (user?.role === 'DOCTOR') {
     return <DoctorDashboard />;
+  }
+
+  if (user?.role === 'LABORATORY') {
+    return <Navigate to="/dashboard/lab-results" replace />;
   }
 
   return (
@@ -69,6 +75,8 @@ function App() {
           <Route path="my-consultations" element={<DoctorConsultations />} />
           <Route path="consultations/new" element={<ConsultationPage />} />
           <Route path="consultations/:id" element={<ConsultationPage />} />
+          <Route path="lab-templates" element={<LabTemplates />} />
+          <Route path="lab-results" element={<LabResults />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

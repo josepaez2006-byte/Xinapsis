@@ -1,9 +1,18 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../middlewares/auth.middleware';
 import { examService } from '../services/exam.service';
 
 export class ExamController {
-  async getAll(req: Request, res: Response) {
+  async getAll(req: AuthRequest, res: Response) {
     try {
+      const clinicId = req.user?.clinicId;
+
+      if (req.query.pending === 'true' && req.query.dni) {
+        if (!clinicId) return res.status(400).json({ message: "Clinic ID is required to search pending exams" });
+        const exams = await examService.getPendingByPatientDni(req.query.dni as string, clinicId);
+        return res.json(exams);
+      }
+
       if (req.query.requestedInConsultationId) {
         const exams = await examService.getByRequestedConsultationId(Number(req.query.requestedInConsultationId));
         return res.json(exams);
@@ -15,7 +24,7 @@ export class ExamController {
     }
   }
 
-  async getById(req: Request, res: Response) {
+  async getById(req: AuthRequest, res: Response) {
     try {
       const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
@@ -29,7 +38,7 @@ export class ExamController {
     }
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: AuthRequest, res: Response) {
     try {
       const exam = await examService.create(req.body);
       res.status(201).json(exam);
@@ -38,7 +47,7 @@ export class ExamController {
     }
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: AuthRequest, res: Response) {
     try {
       const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
@@ -50,7 +59,7 @@ export class ExamController {
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: AuthRequest, res: Response) {
     try {
       const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });

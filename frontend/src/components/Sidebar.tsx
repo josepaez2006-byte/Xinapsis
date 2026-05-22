@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, Calendar, FileText, LogOut, Activity, Building2, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { Users, Calendar, FileText, LogOut, Activity, Building2, LayoutDashboard, ClipboardList, FlaskConical } from 'lucide-react';
 import './Sidebar.css';
 
 export const Sidebar: React.FC<{ userRole: string }> = ({ userRole }) => {
@@ -48,7 +48,7 @@ export const Sidebar: React.FC<{ userRole: string }> = ({ userRole }) => {
           </NavLink>
         )}
 
-        {userRole !== 'SUPER_ADMIN' && (
+        {userRole !== 'SUPER_ADMIN' && userRole !== 'LABORATORY' && (
           <NavLink to="/dashboard/appointments" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
             <Calendar size={20} />
             Citas y Agenda
@@ -67,6 +67,19 @@ export const Sidebar: React.FC<{ userRole: string }> = ({ userRole }) => {
             <ClipboardList size={20} />
             Mis Consultas
           </NavLink>
+        )}
+
+        {userRole === 'LABORATORY' && (
+          <>
+            <NavLink to="/dashboard/lab-results" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+              <ClipboardList size={20} />
+              Cargar Resultados
+            </NavLink>
+            <NavLink to="/dashboard/lab-templates" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+              <FlaskConical size={20} />
+              Plantillas de Examen
+            </NavLink>
+          </>
         )}
       </nav>
 

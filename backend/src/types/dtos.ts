@@ -7,7 +7,7 @@
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-export type AllowedRole = 'ADMIN' | 'DOCTOR' | 'ASSISTANT';
+export type AllowedRole = 'ADMIN' | 'DOCTOR' | 'ASSISTANT' | 'LABORATORY';
 
 export interface RegisterDto {
   email: string;
@@ -29,6 +29,11 @@ export interface RegisterDto {
     dni: string;
     phone?: string;
     schedule?: string;
+  };
+  laboratoryStaffData?: {
+    firstName: string;
+    lastName: string;
+    phone?: string;
   };
 }
 
@@ -162,6 +167,7 @@ export interface CreateExamDto {
   type?: 'LABORATORIO' | 'IMAGNES' | 'OTROS';
   status?: string;
   referenceValues?: string;
+  labExamDetailId?: number;
 }
 
 export interface UpdateExamDto {
@@ -171,5 +177,23 @@ export interface UpdateExamDto {
   status?: string;
   referenceValues?: string;
   results?: string;
+  labExamDetailId?: number;
+}
+
+// ── LabExamTemplate ───────────────────────────────────────────────────────────
+
+export interface CreateLabExamDetailDto {
+  name: string;
+  referenceValue: string;
+}
+
+export interface CreateLabExamTemplateDto {
+  name: string;
+  details: CreateLabExamDetailDto[];
+}
+
+export interface UpdateLabExamTemplateDto {
+  name?: string;
+  details?: { id?: number; name: string; referenceValue: string }[];
 }
 

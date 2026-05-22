@@ -3,11 +3,11 @@ import { X } from 'lucide-react';
 import { api } from '../utils/api';
 
 export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => void }> = ({ onClose, onSuccess }) => {
-  const [roleName, setRoleName] = useState<'ASSISTANT' | 'DOCTOR'>('ASSISTANT');
+  const [roleName, setRoleName] = useState<'ASSISTANT' | 'DOCTOR' | 'LABORATORY'>('ASSISTANT');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // Doctor fields
+  // Doctor/Assistant/Lab fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [specialty, setSpecialty] = useState('');
@@ -16,7 +16,7 @@ export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => voi
   const [phone, setPhone] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   
-  // Assistant fields (some shared)
+  // Assistant fields
   const [dni, setDni] = useState('');
   const [schedule, setSchedule] = useState('');
 
@@ -28,7 +28,6 @@ export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => voi
     setIsLoading(true);
     setError('');
 
-    // El clinicId NO se envía en el payload — el backend lo extrae del JWT del admin autenticado
     const payload = {
       email,
       password,
@@ -38,6 +37,9 @@ export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => voi
       } : {}),
       ...(roleName === 'ASSISTANT' ? {
         assistantData: { firstName, lastName, dni, phone, schedule }
+      } : {}),
+      ...(roleName === 'LABORATORY' ? {
+        laboratoryStaffData: { firstName, lastName, phone }
       } : {})
     };
 
@@ -65,13 +67,14 @@ export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => voi
         <h2 style={{ marginBottom: '1.5rem' }}>Añadir Nuevo Empleado</h2>
         
         {error && <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
-
+ 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Rol del Empleado</label>
             <select className="input-field" value={roleName} onChange={(e) => setRoleName(e.target.value as any)}>
               <option value="ASSISTANT">Asistente / Recepcionista</option>
               <option value="DOCTOR">Doctor / Médico</option>
+              <option value="LABORATORY">Laboratorio / Bioanalista</option>
             </select>
           </div>
 
@@ -162,6 +165,30 @@ export const AddStaffModal: React.FC<{ onClose: () => void, onSuccess: () => voi
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
                   <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Horario de Trabajo</label>
                   <input type="text" className="input-field" placeholder="Ej. Lunes a Viernes, 8am a 4pm" value={schedule} onChange={e => setSchedule(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {roleName === 'LABORATORY' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '0.5rem' }}>
+              <h3 style={{ fontSize: '1rem', margin: 0 }}>Perfil Laboratorio</h3>
+              
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Nombre</label>
+                  <input type="text" required className="input-field" value={firstName} onChange={e => setFirstName(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Apellido</label>
+                  <input type="text" required className="input-field" value={lastName} onChange={e => setLastName(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Teléfono</label>
+                  <input type="text" className="input-field" placeholder="Opcional" value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
               </div>
             </div>

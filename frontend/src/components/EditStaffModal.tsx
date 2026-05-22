@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../utils/api';
 
@@ -146,6 +146,16 @@ export const EditStaffModal: React.FC<{
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
                   <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Teléfono</label>
                   <input type="text" className="input-field" value={phone} onChange={e => setPhone(e.target.value)} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Correo Secundario</label>
+                  <input type="email" className="input-field" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Otras Especialidades</label>
+                  <input type="text" className="input-field" value={otherSpecialties} onChange={e => setOtherSpecialties(e.target.value)} />
                 </div>
               </div>
             </div>

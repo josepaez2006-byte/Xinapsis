@@ -13,7 +13,7 @@ import './ConsultationPage.css';
 interface Finding { id?: number; description: string }
 interface Diagnosis { id?: number; description: string; codeCIE10: string }
 interface Treatment { id?: number; medication: string; dosage: string; instructions: string }
-interface ExamReq { id?: number; name: string; status: string; type: 'LABORATORIO' | 'IMAGNES' | 'OTROS'; referenceValues: string }
+interface ExamReq { id?: number; name: string; status: string; type: 'LABORATORIO' | 'IMAGNES' | 'OTROS'; referenceValues: string; results?: string; labExamDetailId?: number }
 
 interface MedicalHistoryForm {
   fatherHistory: string;
@@ -76,6 +76,7 @@ export const ConsultationPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
+  const [labTemplates, setLabTemplates] = useState<any[]>([]);
 
   const [patientName, setPatientName] = useState('');
   const [patientDni, setPatientDni] = useState('');
@@ -87,6 +88,39 @@ export const ConsultationPage: React.FC = () => {
   const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([{ description: '', codeCIE10: '' }]);
   const [treatments, setTreatments] = useState<Treatment[]>([{ medication: '', dosage: '', instructions: '' }]);
   const [exams, setExams] = useState<ExamReq[]>([{ name: '', status: 'PENDING', type: 'LABORATORIO', referenceValues: '' }]);
+
+  // Load lab templates
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const data = await api.get<any[]>('/lab-exams');
+        setLabTemplates(data);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  const handleAddTemplateExams = (templateId: number) => {
+    const template = labTemplates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    const newExams = template.details.map((d: any) => ({
+      name: d.name,
+      status: 'PENDING',
+      type: 'LABORATORIO' as const,
+      referenceValues: d.referenceValue,
+      labExamDetailId: d.id
+    }));
+
+    setExams(prev => {
+      // Remove empty row if it is the only one and is empty
+      const filtered = prev.filter(e => e.name.trim() !== '');
+      return [...filtered, ...newExams];
+    });
+    markDirty();
+  };
 
   // ── Prevent Data Loss ───────────────────────────────────────────────────────
 
@@ -580,10 +614,33 @@ export const ConsultationPage: React.FC = () => {
 
 
               <div className="section-title"><FlaskConical size={18} /> Exámenes y Paraclínicos Solicitados</div>
+              
+              <div style={{ marginBottom: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                  Cargar desde Plantilla:
+                </span>
+                <select 
+                  className="input-field" 
+                  style={{ maxWidth: '300px' }}
+                  defaultValue="" 
+                  onChange={ev => {
+                    if (ev.target.value) {
+                      handleAddTemplateExams(Number(ev.target.value));
+                      ev.target.value = ""; 
+                    }
+                  }}
+                >
+                  <option value="">-- Seleccionar Plantilla --</option>
+                  {labTemplates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="list-container">
                 {exams.map((e, i) => (
-                  <div key={i} className="list-item">
-                    <div className="item-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                  <div key={i} className="list-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.5rem' }}>
+                    <div className="item-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1.5fr', gap: '1rem', alignItems: 'center' }}>
                       <select className="input-field" value={e.type} onChange={ev => {
                         setExams(p => p.map((item, idx) => idx === i ? { ...item, type: ev.target.value as any } : item));
                         markDirty();
@@ -592,12 +649,53 @@ export const ConsultationPage: React.FC = () => {
                         <option value="IMAGNES">Imágenes</option>
                         <option value="OTROS">Otros</option>
                       </select>
-                      <input className="input-field" type="text" placeholder="Ej. Hemoglobina..." value={e.name} onChange={ev => {
-                        setExams(p => p.map((item, idx) => idx === i ? { ...item, name: ev.target.value } : item));
-                        markDirty();
-                      }} />
+                      <input 
+                        className="input-field" 
+                        type="text" 
+                        placeholder="Ej. Hemoglobina..." 
+                        value={e.name} 
+                        onChange={ev => {
+                          setExams(p => p.map((item, idx) => idx === i ? { ...item, name: ev.target.value } : item));
+                          markDirty();
+                        }}
+                        disabled={!!e.labExamDetailId}
+                      />
+                      <input 
+                        className="input-field" 
+                        type="text" 
+                        placeholder="Valor de referencia (opcional)..." 
+                        value={e.referenceValues || ''} 
+                        onChange={ev => {
+                          setExams(p => p.map((item, idx) => idx === i ? { ...item, referenceValues: ev.target.value } : item));
+                          markDirty();
+                        }}
+                        disabled={!!e.labExamDetailId}
+                      />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+
+                    {e.type === 'LABORATORIO' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', padding: '0.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                          Estado: <span style={{ color: e.status === 'COMPLETED' ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>
+                            {e.status === 'COMPLETED' ? 'Completado' : 'Pendiente de Carga'}
+                          </span>
+                        </span>
+                        {e.status === 'COMPLETED' ? (
+                          <span style={{ fontSize: '0.85rem' }}>
+                            <strong>Resultado: </strong>
+                            <span style={{ display: 'inline-block', padding: '0.15rem 0.5rem', borderRadius: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', fontWeight: 700 }}>
+                              {e.results}
+                            </span>
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                            Esperando resultados del laboratorio
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
                       <button className="delete-btn" onClick={() => { setExams(p => p.filter((_, idx) => idx !== i)); markDirty(); }}><Trash2 size={18} /></button>
                     </div>
                   </div>

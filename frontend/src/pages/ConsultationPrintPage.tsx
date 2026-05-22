@@ -202,18 +202,61 @@ export const ConsultationPrintPage: React.FC = () => {
         {/* 3. ORDEN DE EXÁMENES */}
         {printType === 'exams' && (
           <section className="print-section">
-            <h3 className="section-heading">Órdenes de Exámenes y Paraclínicos</h3>
+            <h3 className="section-heading">Órdenes y Resultados de Exámenes</h3>
             {(!data.examsRequested || data.examsRequested.length === 0) ? (
               <p className="print-text">No hay exámenes solicitados en esta consulta.</p>
             ) : (
-              <ul className="print-list">
-                {data.examsRequested.map((e, i) => (
-                  <li key={i} className="print-list-item">
-                    <strong>{e.name}</strong>
-                    <p>Tipo: {e.type}</p>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                {/* Laboratory table if any exist */}
+                {data.examsRequested.some(e => e.type === 'LABORATORIO') && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
+                      Exámenes de Laboratorio
+                    </h4>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '1rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                          <th style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 600 }}>Indicador / Examen</th>
+                          <th style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 600 }}>Valor de Referencia</th>
+                          <th style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 600 }}>Resultado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.examsRequested
+                          .filter(e => e.type === 'LABORATORIO')
+                          .map((e, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 500 }}>{e.name}</td>
+                              <td style={{ padding: '8px', fontSize: '0.85rem', fontFamily: 'monospace' }}>{e.referenceValues || 'N/A'}</td>
+                              <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 700, color: e.status === 'COMPLETED' ? '#16a34a' : '#d97706' }}>
+                                {e.status === 'COMPLETED' ? e.results : 'PENDIENTE'}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Other/Imaging list */}
+                {data.examsRequested.some(e => e.type !== 'LABORATORIO') && (
+                  <div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
+                      Imágenes y Otros Paraclínicos
+                    </h4>
+                    <ul className="print-list" style={{ marginTop: '0.5rem' }}>
+                      {data.examsRequested
+                        .filter(e => e.type !== 'LABORATORIO')
+                        .map((e, i) => (
+                          <li key={i} className="print-list-item">
+                            <strong>{e.name}</strong>
+                            <p>Tipo: {e.type === 'IMAGNES' ? 'Imágenes' : 'Otros'}</p>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
           </section>
         )}

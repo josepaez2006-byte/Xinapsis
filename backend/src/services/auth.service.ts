@@ -4,7 +4,7 @@ import prisma from '../db/prisma';
 import { RegisterDto, LoginDto, AllowedRole } from '../types/dtos';
 
 // Roles que se pueden crear por API. SUPER_ADMIN solo se crea vía seed.
-const ALLOWED_ROLES: AllowedRole[] = ['ADMIN', 'DOCTOR', 'ASSISTANT'];
+const ALLOWED_ROLES: AllowedRole[] = ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY'];
 
 export class AuthService {
   async register(data: RegisterDto, requestingUserRole?: string) {
@@ -138,6 +138,22 @@ export class AuthService {
         });
       }
 
+      if (roleName === 'LABORATORY') {
+        if (!data.laboratoryStaffData?.firstName || !data.laboratoryStaffData?.lastName) {
+          throw new Error('Laboratory profile data is incomplete');
+        }
+
+        await tx.laboratoryStaff.create({
+          data: {
+            userId: newUser.id,
+            clinicId,
+            firstName: data.laboratoryStaffData.firstName,
+            lastName: data.laboratoryStaffData.lastName,
+            phone: data.laboratoryStaffData.phone
+          }
+        });
+      }
+
       return newUser;
     });
 
@@ -157,7 +173,8 @@ export class AuthService {
       include: { 
         role: true,
         doctor: { select: { id: true, firstName: true, lastName: true } },
-        assistant: { select: { id: true, firstName: true, lastName: true } }
+        assistant: { select: { id: true, firstName: true, lastName: true } },
+        laboratoryStaff: { select: { id: true, firstName: true, lastName: true } }
       }
     });
     if (!user) throw new Error('Invalid credentials');
@@ -173,6 +190,7 @@ export class AuthService {
         clinicId: user.clinicId ?? null,
         doctorId: user.doctor?.id || null,
         assistantId: user.assistant?.id || null,
+        laboratoryStaffId: user.laboratoryStaff?.id || null,
       },
       secret,
       { expiresIn: '1d' }
@@ -186,6 +204,9 @@ export class AuthService {
     } else if (user.assistant) {
       firstName = user.assistant.firstName;
       lastName = user.assistant.lastName;
+    } else if (user.laboratoryStaff) {
+      firstName = user.laboratoryStaff.firstName;
+      lastName = user.laboratoryStaff.lastName;
     }
 
     return {
@@ -197,6 +218,7 @@ export class AuthService {
         clinicId: user.clinicId ?? null,
         doctorId: user.doctor?.id || null,
         assistantId: user.assistant?.id || null,
+        laboratoryStaffId: user.laboratoryStaff?.id || null,
         firstName,
         lastName
       }

@@ -2,7 +2,7 @@ import React from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../contexts/AuthContext';
-import { UserRound, Stethoscope, ShieldCheck, ClipboardList, UserCog } from 'lucide-react';
+import { UserRound, Stethoscope, ShieldCheck, ClipboardList, UserCog, FlaskConical } from 'lucide-react';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -25,6 +25,11 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
       label = 'Asistente Clínico';
       color = '#22c55e';
       bgColor = 'rgba(34, 197, 94, 0.1)';
+    } else if (role === 'LABORATORY') {
+      SubIcon = <FlaskConical size={12} />;
+      label = 'Bioanalista / Laboratorio';
+      color = '#eab308';
+      bgColor = 'rgba(234, 179, 8, 0.1)';
     } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
       SubIcon = <ShieldCheck size={12} />;
       label = role === 'SUPER_ADMIN' ? 'Súper Admin' : 'Administrador';

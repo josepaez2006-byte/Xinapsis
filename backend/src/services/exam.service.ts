@@ -5,7 +5,12 @@ export class ExamService {
     return prisma.exam.findMany({
       include: {
         requestedInConsultation: true,
-        analyzedInConsultation: true
+        analyzedInConsultation: true,
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        }
       }
     });
   }
@@ -15,7 +20,12 @@ export class ExamService {
       where: { id },
       include: {
         requestedInConsultation: true,
-        analyzedInConsultation: true
+        analyzedInConsultation: true,
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        }
       }
     });
   }
@@ -25,7 +35,45 @@ export class ExamService {
       where: { requestedInConsultationId: consultationId },
       include: {
         requestedInConsultation: true,
-        analyzedInConsultation: true
+        analyzedInConsultation: true,
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        }
+      }
+    });
+  }
+
+  async getPendingByPatientDni(dni: string, clinicId: number) {
+    // 1. Find patient in the clinic
+    const patient = await prisma.patient.findFirst({
+      where: { dni, clinicId }
+    });
+
+    if (!patient) return [];
+
+    // 2. Find pending exams of type LABORATORIO for this patient
+    return prisma.exam.findMany({
+      where: {
+        requestedInConsultation: {
+          patientId: patient.id
+        },
+        type: 'LABORATORIO',
+        status: 'PENDING'
+      },
+      include: {
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        },
+        requestedInConsultation: {
+          include: {
+            patient: true,
+            doctor: true
+          }
+        }
       }
     });
   }
@@ -35,7 +83,12 @@ export class ExamService {
       data,
       include: {
         requestedInConsultation: true,
-        analyzedInConsultation: true
+        analyzedInConsultation: true,
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        }
       }
     });
   }
@@ -46,7 +99,12 @@ export class ExamService {
       data,
       include: {
         requestedInConsultation: true,
-        analyzedInConsultation: true
+        analyzedInConsultation: true,
+        labExamDetail: {
+          include: {
+            labExamTemplate: true
+          }
+        }
       }
     });
   }
