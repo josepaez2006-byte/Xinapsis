@@ -15,7 +15,7 @@ export class LabExamController {
 
   async getById(req: AuthRequest, res: Response) {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
 
       const clinicId = req.user!.clinicId!;
@@ -40,7 +40,7 @@ export class LabExamController {
 
   async update(req: AuthRequest, res: Response) {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
 
       const clinicId = req.user!.clinicId!;
@@ -53,7 +53,7 @@ export class LabExamController {
 
   async delete(req: AuthRequest, res: Response) {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(req.params.id as string, 10);
       if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
 
       const clinicId = req.user!.clinicId!;
