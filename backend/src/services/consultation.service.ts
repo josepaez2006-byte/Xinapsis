@@ -45,6 +45,18 @@ export class ConsultationService {
     } = data;
     const datetime = rawDatetime ? new Date(rawDatetime) : undefined;
 
+    // Validar referencias cruzadas de inquilinos
+    const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId } });
+    if (!patient) throw new Error('Patient not found in this clinic');
+
+    const doctor = await prisma.doctor.findFirst({ where: { id: doctorId, clinicId } });
+    if (!doctor) throw new Error('Doctor not found in this clinic');
+
+    if (appointmentId) {
+      const appointment = await prisma.appointment.findFirst({ where: { id: appointmentId, clinicId } });
+      if (!appointment) throw new Error('Appointment not found in this clinic');
+    }
+
     return prisma.consultation.create({
       data: {
         patientId, doctorId, clinicId,

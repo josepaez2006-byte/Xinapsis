@@ -1,8 +1,11 @@
 import prisma from '../db/prisma';
 
 export class ExamService {
-  async getAll() {
+  async getAll(clinicId: number) {
     return prisma.exam.findMany({
+      where: {
+        requestedInConsultation: { clinicId }
+      },
       include: {
         requestedInConsultation: true,
         analyzedInConsultation: true,
@@ -15,9 +18,12 @@ export class ExamService {
     });
   }
 
-  async getById(id: number) {
-    return prisma.exam.findUnique({
-      where: { id },
+  async getById(id: number, clinicId: number) {
+    return prisma.exam.findFirst({
+      where: {
+        id,
+        requestedInConsultation: { clinicId }
+      },
       include: {
         requestedInConsultation: true,
         analyzedInConsultation: true,
@@ -30,9 +36,12 @@ export class ExamService {
     });
   }
 
-  async getByRequestedConsultationId(consultationId: number) {
+  async getByRequestedConsultationId(consultationId: number, clinicId: number) {
     return prisma.exam.findMany({
-      where: { requestedInConsultationId: consultationId },
+      where: {
+        requestedInConsultationId: consultationId,
+        requestedInConsultation: { clinicId }
+      },
       include: {
         requestedInConsultation: true,
         analyzedInConsultation: true,
@@ -78,7 +87,13 @@ export class ExamService {
     });
   }
 
-  async create(data: any) {
+  async create(data: any, clinicId: number) {
+    const { requestedInConsultationId } = data;
+    const consultation = await prisma.consultation.findFirst({
+      where: { id: requestedInConsultationId, clinicId }
+    });
+    if (!consultation) throw new Error('Requested consultation not found in this clinic');
+
     return prisma.exam.create({
       data,
       include: {
@@ -93,7 +108,17 @@ export class ExamService {
     });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, data: any, clinicId: number) {
+    const existing = await prisma.exam.findFirst({
+      where: {
+        id,
+        requestedInConsultation: { clinicId }
+      }
+    });
+    if (!existing) {
+      throw new Error('Exam not found in this clinic');
+    }
+
     return prisma.exam.update({
       where: { id },
       data,
@@ -109,7 +134,17 @@ export class ExamService {
     });
   }
 
-  async delete(id: number) {
+  async delete(id: number, clinicId: number) {
+    const existing = await prisma.exam.findFirst({
+      where: {
+        id,
+        requestedInConsultation: { clinicId }
+      }
+    });
+    if (!existing) {
+      throw new Error('Exam not found in this clinic');
+    }
+
     return prisma.exam.delete({
       where: { id }
     });

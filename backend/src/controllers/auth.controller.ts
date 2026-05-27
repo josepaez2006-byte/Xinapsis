@@ -6,9 +6,20 @@ export class AuthController {
   async register(req: AuthRequest, res: Response) {
     try {
       const requestingUser = req.user!; // Garantizado por authMiddleware
+      
+      let clinicId: number;
+      if (requestingUser.role === 'SUPER_ADMIN') {
+        if (!req.body.clinicId) {
+          return res.status(400).json({ message: 'clinicId is required for SUPER_ADMIN when registering users' });
+        }
+        clinicId = parseInt(req.body.clinicId, 10);
+      } else {
+        clinicId = requestingUser.clinicId!;
+      }
+
       const user = await authService.registerForClinic(
         req.body,
-        requestingUser.clinicId!,    // clinicId del JWT, no del body
+        clinicId,
         requestingUser.role          // para validar si puede crear ADMIN
       );
       res.status(201).json({ message: 'User registered successfully', user });

@@ -22,6 +22,16 @@ export class AppointmentService {
     if (!rawDatetime) throw new Error('datetime is required');
     const datetime = new Date(rawDatetime);
 
+    // Validar referencias cruzadas de inquilinos
+    const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId } });
+    if (!patient) throw new Error('Patient not found in this clinic');
+
+    const doctor = await prisma.doctor.findFirst({ where: { id: doctorId, clinicId } });
+    if (!doctor) throw new Error('Doctor not found in this clinic');
+
+    const office = await prisma.office.findFirst({ where: { id: officeId, clinicId } });
+    if (!office) throw new Error('Office not found in this clinic');
+
     return prisma.appointment.create({
       data: { 
         patientId, 
@@ -46,6 +56,20 @@ export class AppointmentService {
     // Destructuring explícito: el clinicId del body es ignorado
     const { patientId, doctorId, officeId, datetime: rawDatetime, status, duration, type, isConfirmed, notes } = data;
     const datetime = rawDatetime ? new Date(rawDatetime) : undefined;
+
+    // Validar referencias cruzadas de inquilinos si se actualizan
+    if (patientId) {
+      const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId } });
+      if (!patient) throw new Error('Patient not found in this clinic');
+    }
+    if (doctorId) {
+      const doctor = await prisma.doctor.findFirst({ where: { id: doctorId, clinicId } });
+      if (!doctor) throw new Error('Doctor not found in this clinic');
+    }
+    if (officeId) {
+      const office = await prisma.office.findFirst({ where: { id: officeId, clinicId } });
+      if (!office) throw new Error('Office not found in this clinic');
+    }
 
     return prisma.appointment.update({
       where: { id },
