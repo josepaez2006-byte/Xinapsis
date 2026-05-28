@@ -8,11 +8,11 @@ const router = Router();
 // Login es público — cualquiera puede autenticarse
 router.post('/login', authController.login.bind(authController));
 
-// Register es protegido — solo ADMIN o SUPER_ADMIN pueden crear usuarios
+// Register es protegido — ADMIN, SUPER_ADMIN y SUPER_DOCTOR pueden crear personal de clínica
 router.post(
   '/register',
   authMiddleware,
-  roleMiddleware(['ADMIN', 'SUPER_ADMIN']),
+  roleMiddleware(['ADMIN', 'SUPER_ADMIN', 'SUPER_DOCTOR']),
   authController.register.bind(authController)
 );
 

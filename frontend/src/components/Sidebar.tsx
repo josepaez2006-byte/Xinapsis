@@ -27,14 +27,14 @@ export const Sidebar: React.FC<{ userRole: string }> = ({ userRole }) => {
           </NavLink>
         )}
 
-        {userRole === 'ADMIN' && (
+        {['ADMIN', 'SUPER_DOCTOR'].includes(userRole) && (
           <NavLink to="/dashboard/staff" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
             <Users size={20} />
             Personal
           </NavLink>
         )}
 
-        {userRole === 'ADMIN' && (
+        {['ADMIN', 'SUPER_DOCTOR'].includes(userRole) && (
           <NavLink to="/dashboard/offices" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
             <Building2 size={20} />
             Consultorios
@@ -55,14 +55,14 @@ export const Sidebar: React.FC<{ userRole: string }> = ({ userRole }) => {
           </NavLink>
         )}
 
-        {(userRole === 'ADMIN' || userRole === 'DOCTOR') && (
+        {(userRole === 'ADMIN' || userRole === 'DOCTOR' || userRole === 'SUPER_DOCTOR') && (
           <NavLink to="/dashboard/patients" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
             <FileText size={20} />
             Historias Médicas
           </NavLink>
         )}
 
-        {(userRole === 'ADMIN' || userRole === 'DOCTOR') && (
+        {(userRole === 'ADMIN' || userRole === 'DOCTOR' || userRole === 'SUPER_DOCTOR') && (
           <NavLink to="/dashboard/my-consultations" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
             <ClipboardList size={20} />
             Mis Consultas

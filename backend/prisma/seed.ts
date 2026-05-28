@@ -32,7 +32,7 @@ async function main() {
   console.log(`✅ Role created/verified: ${superAdminRole.name}`);
 
   // 2. Also ensure the other operational roles exist
-  for (const roleName of ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY']) {
+  for (const roleName of ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY', 'SUPER_DOCTOR']) {
     await prisma.role.upsert({
       where: { name: roleName },
       update: {},
@@ -45,24 +45,34 @@ async function main() {
   const SUPER_ADMIN_EMAIL    = 'superadmin@xinapsis.com';  // ← Change this
   const SUPER_ADMIN_PASSWORD = 'Xinapsis2025!';            // ← Change this
 
-  const hashedPassword = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
 
-  const superAdmin = await prisma.user.upsert({
-    where: { email: SUPER_ADMIN_EMAIL },
-    update: {},
-    create: {
-      email: SUPER_ADMIN_EMAIL,
-      password: hashedPassword,
-      roleId: superAdminRole.id,
-      clinicId: null,  // SUPER_ADMIN does not belong to any clinic
-    }
+  // Check if any SUPER_ADMIN user already exists to ensure only one exists globally
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { role: { name: 'SUPER_ADMIN' } }
   });
 
-  console.log(`\n🚀 SUPER_ADMIN user ready:`);
-  console.log(`   Email   : ${SUPER_ADMIN_EMAIL}`);
-  console.log(`   Password: ${SUPER_ADMIN_PASSWORD}`);
-  console.log(`   User ID : ${superAdmin.id}`);
-  console.log(`\n⚠️  Remember to change the password after first login!\n`);
+  let superAdmin;
+  if (existingSuperAdmin) {
+    console.log(`\nℹ️  A SUPER_ADMIN user already exists: ${existingSuperAdmin.email}. Skipping creation to ensure exactly one global superuser.`);
+    superAdmin = existingSuperAdmin;
+  } else {
+    const hashedPassword = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
+
+    superAdmin = await prisma.user.create({
+      data: {
+        email: SUPER_ADMIN_EMAIL,
+        password: hashedPassword,
+        roleId: superAdminRole.id,
+        clinicId: null,  // SUPER_ADMIN does not belong to any clinic
+      }
+    });
+
+    console.log(`\n🚀 SUPER_ADMIN user ready:`);
+    console.log(`   Email   : ${SUPER_ADMIN_EMAIL}`);
+    console.log(`   Password: ${SUPER_ADMIN_PASSWORD}`);
+    console.log(`   User ID : ${superAdmin.id}`);
+    console.log(`\n⚠️  Remember to change the password after first login!\n`);
+  }
 }
 
 main()

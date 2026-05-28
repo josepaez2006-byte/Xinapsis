@@ -7,7 +7,7 @@
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-export type AllowedRole = 'ADMIN' | 'DOCTOR' | 'ASSISTANT' | 'LABORATORY';
+export type AllowedRole = 'ADMIN' | 'DOCTOR' | 'ASSISTANT' | 'LABORATORY' | 'SUPER_DOCTOR';
 
 export interface RegisterDto {
   email: string;

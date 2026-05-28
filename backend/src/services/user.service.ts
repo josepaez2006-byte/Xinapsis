@@ -36,7 +36,7 @@ export class UserService {
         }
 
         // 2. Perfil según rol
-        if (user.role.name === 'DOCTOR' && doctorData) {
+        if ((user.role.name === 'DOCTOR' || user.role.name === 'SUPER_DOCTOR') && doctorData) {
           await tx.doctor.upsert({
             where: { userId: id },
             update: {
@@ -102,10 +102,12 @@ export class UserService {
     if (!user) throw new Error('Usuario no encontrado');
 
     return prisma.$transaction(async (tx) => {
-      if (user.role.name === 'DOCTOR') {
+      if (user.role.name === 'DOCTOR' || user.role.name === 'SUPER_DOCTOR') {
         await tx.doctor.deleteMany({ where: { userId: id } });
       } else if (user.role.name === 'ASSISTANT') {
         await tx.assistant.deleteMany({ where: { userId: id } });
+      } else if (user.role.name === 'LABORATORY') {
+        await tx.laboratoryStaff.deleteMany({ where: { userId: id } });
       }
       return tx.user.delete({ where: { id } });
     });

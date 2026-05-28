@@ -4,7 +4,7 @@ import prisma from '../db/prisma';
 import { RegisterDto, LoginDto, AllowedRole } from '../types/dtos';
 
 // Roles que se pueden crear por API. SUPER_ADMIN solo se crea vía seed.
-const ALLOWED_ROLES: AllowedRole[] = ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY'];
+const ALLOWED_ROLES: AllowedRole[] = ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY', 'SUPER_DOCTOR'];
 
 export class AuthService {
   async register(data: RegisterDto, requestingUserRole?: string) {
@@ -12,6 +12,10 @@ export class AuthService {
 
     if (!email || !password || !roleName) {
       throw new Error('Email, password and roleName are required');
+    }
+
+    if (roleName as string === 'SUPER_ADMIN') {
+      throw new Error('SUPER_ADMIN users cannot be created through the API');
     }
 
     // Validar que el rol solicitado está en la whitelist
@@ -24,6 +28,11 @@ export class AuthService {
       throw new Error('Only SUPER_ADMIN can create ADMIN users');
     }
 
+    // Validar que roles como DOCTOR/ASSISTANT/SUPER_DOCTOR requieren contexto de clínica
+    if (roleName === 'DOCTOR' || roleName === 'ASSISTANT' || roleName === 'SUPER_DOCTOR') {
+      throw new Error(`Cannot create ${roleName} without a clinic context. Use registerForClinic instead.`);
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('User already exists');
 
@@ -32,7 +41,7 @@ export class AuthService {
       role = await prisma.role.create({ data: { name: roleName } });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
@@ -40,14 +49,10 @@ export class AuthService {
           email,
           password: hashedPassword,
           roleId: role!.id,
-          clinicId: null, // El clinicId se asigna desde el contexto del admin, no del body
+          clinicId: null,
         },
         include: { role: true }
       });
-
-      if (roleName === 'DOCTOR' || roleName === 'ASSISTANT') {
-        throw new Error(`Cannot create ${roleName} without a clinic context. Use registerForClinic instead.`);
-      }
 
       return newUser;
     });
@@ -61,6 +66,10 @@ export class AuthService {
 
     if (!email || !password || !roleName) {
       throw new Error('Email, password and roleName are required');
+    }
+
+    if (roleName as string === 'SUPER_ADMIN') {
+      throw new Error('SUPER_ADMIN users cannot be created through the API');
     }
 
     // Validar que el rol solicitado está en la whitelist
@@ -86,7 +95,7 @@ export class AuthService {
       role = await prisma.role.create({ data: { name: roleName } });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
@@ -99,7 +108,7 @@ export class AuthService {
         include: { role: true }
       });
 
-      if (roleName === 'DOCTOR') {
+      if (roleName === 'DOCTOR' || roleName === 'SUPER_DOCTOR') {
         if (!doctorData?.firstName || !doctorData?.lastName || !doctorData?.specialty || !doctorData?.medicalLicense) {
           throw new Error('Doctor profile data is incomplete');
         }

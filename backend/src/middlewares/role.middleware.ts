@@ -12,6 +12,14 @@ export const roleMiddleware = (allowedRoles: string[]) => {
       return next();
     }
 
+    // SUPER_DOCTOR has ADMIN, DOCTOR and ASSISTANT permissions
+    if (req.user.role === 'SUPER_DOCTOR') {
+      const superDoctorPermissions = ['ADMIN', 'DOCTOR', 'ASSISTANT'];
+      if (allowedRoles.some(r => superDoctorPermissions.includes(r)) || allowedRoles.includes('SUPER_DOCTOR')) {
+        return next();
+      }
+    }
+
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Access denied: insufficient permissions' });
     }

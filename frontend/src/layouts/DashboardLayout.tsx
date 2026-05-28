@@ -15,7 +15,12 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     let color = '#64748b';
     let bgColor = 'rgba(100, 116, 139, 0.1)';
 
-    if (role === 'DOCTOR') {
+    if (role === 'SUPER_DOCTOR') {
+      SubIcon = <Stethoscope size={12} />;
+      label = 'Súper Médico';
+      color = '#0ea5e9';
+      bgColor = 'rgba(14, 165, 233, 0.1)';
+    } else if (role === 'DOCTOR') {
       SubIcon = <Stethoscope size={12} />;
       label = 'Médico Especialista';
       color = '#0ea5e9';
@@ -82,7 +87,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-              Hola, {user?.firstName ? (user?.role === 'DOCTOR' ? 'Dr. ' : '') + `${user.firstName} ${user.lastName}` : user?.email.split('@')[0]}
+              Hola, {user?.firstName ? (['DOCTOR', 'SUPER_DOCTOR'].includes(user?.role || '') ? 'Dr. ' : '') + `${user.firstName} ${user.lastName}` : user?.email.split('@')[0]}
             </h2>
             {getRoleBadge()}
           </div>

@@ -111,7 +111,7 @@ export const AppointmentsManagement: React.FC = () => {
   };
 
   const handleAppointmentClick = (app: Appointment) => {
-    if (user?.role === 'DOCTOR') {
+    if (user?.role === 'DOCTOR' || user?.role === 'SUPER_DOCTOR') {
       if (app.status === 'COMPLETADO' && app.consultation) {
         navigate(`/dashboard/consultations/${app.consultation.id}`);
       } else if (app.status === 'PENDIENTE') {
@@ -252,7 +252,7 @@ export const AppointmentsManagement: React.FC = () => {
                         height: `${height}px`,
                         borderLeftColor: getTypeColor(app.type),
                         opacity: getStatusOpacity(app.status),
-                        cursor: (user?.role === 'DOCTOR' && app.status === 'PENDIENTE') ? 'pointer' : 'default'
+                        cursor: ((user?.role === 'DOCTOR' || user?.role === 'SUPER_DOCTOR') && app.status === 'PENDIENTE') ? 'pointer' : 'default'
                       }}
                     >
                       <div className="app-title">

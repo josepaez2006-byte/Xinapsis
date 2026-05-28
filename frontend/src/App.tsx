@@ -36,7 +36,7 @@ const PrintRoute = () => {
 const DashboardHome = () => {
   const { user } = useAuth();
   
-  if (user?.role === 'DOCTOR') {
+  if (user?.role === 'DOCTOR' || user?.role === 'SUPER_DOCTOR') {
     return <DoctorDashboard />;
   }
 
