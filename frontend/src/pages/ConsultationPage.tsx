@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Save, Activity, Heart, ClipboardList, Pill, FlaskConical,
-  Plus, Trash2, Stethoscope, User, ChevronLeft, AlertCircle, Printer, RotateCcw
+  Plus, Trash2, Stethoscope, User, ChevronLeft, AlertCircle, Printer, RotateCcw, Mic, MicOff, Loader2
 } from 'lucide-react';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useVoiceToText } from '../hooks/useVoiceToText';
 import './ConsultationPage.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,6 +62,48 @@ const TABS = [
   { key: 'rx', label: 'Plan y Tratamiento', icon: Pill },
 ];
 
+// ── Voz a Texto: configuración específica para Xinapsis ────────────────────────
+
+interface DictadoResult {
+  reason:     string;
+  symptoms:   string;
+  findings:   string[];
+  diagnoses:  Array<{ description: string; codeCIE10: string }>;
+}
+
+const DICTADO_INITIAL: DictadoResult = {
+  reason: '', symptoms: '', findings: [], diagnoses: [],
+};
+
+const buildDictadoPrompt = (transcript: string) => `
+Eres un asistente médico clínico. Analiza el siguiente dictado de un médico y extrae
+la información clasificada en cuatro campos:
+- "reason": motivo principal de consulta (breve, 1-2 oraciones).
+- "symptoms": síntomas y evolución del cuadro clínico (más detallado).
+- "findings": array de strings, cada uno con un hallazgo al examen físico.
+- "diagnoses": array de objetos {"description": string, "codeCIE10": string}.
+  Intenta inferir el código CIE-10 más probable; si no sabes, deja "codeCIE10" vacío.
+
+Dictado del médico:
+"${transcript}"
+
+Devuelve ÚNICAMENTE un JSON válido con las llaves: reason, symptoms, findings, diagnoses.
+`;
+
+const parseDictadoResponse = (json: Record<string, unknown>): DictadoResult => ({
+  reason:    typeof json.reason    === 'string' ? json.reason    : '',
+  symptoms:  typeof json.symptoms  === 'string' ? json.symptoms  : '',
+  findings:  Array.isArray(json.findings)
+    ? (json.findings as unknown[]).filter((f): f is string => typeof f === 'string')
+    : [],
+  diagnoses: Array.isArray(json.diagnoses)
+    ? (json.diagnoses as unknown[]).map((d) => ({
+        description: typeof (d as any).description === 'string' ? (d as any).description : '',
+        codeCIE10:   typeof (d as any).codeCIE10   === 'string' ? (d as any).codeCIE10   : '',
+      }))
+    : [],
+});
+
 export const ConsultationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -77,6 +120,45 @@ export const ConsultationPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
   const [labTemplates, setLabTemplates] = useState<any[]>([]);
+
+  // ── Voz a Texto ─────────────────────────────────────────────────────────────
+  const voice = useVoiceToText<DictadoResult>({
+    apiKey:          import.meta.env.VITE_GEMINI_API_KEY as string,
+    language:        'es-ES',
+    buildPrompt:     buildDictadoPrompt,
+    parseResponse:   parseDictadoResponse,
+    initialResult:   DICTADO_INITIAL,
+  });
+
+  // Cuando llega un resultado de voz, llenamos los campos del formulario
+  const handleVoiceApply = useCallback(() => {
+    if (!voice.result) return;
+    const r = voice.result;
+
+    if (r.reason.trim()) {
+      setTriage(p => ({ ...p, reason: r.reason }));
+      markDirty();
+    }
+    if (r.symptoms.trim()) {
+      setTriage(p => ({ ...p, symptoms: r.symptoms }));
+      markDirty();
+    }
+    if (r.findings.length > 0) {
+      setFindings(prev => {
+        const base = prev.filter(f => f.description.trim());
+        return [...base, ...r.findings.map(d => ({ description: d }))];
+      });
+      markDirty();
+    }
+    if (r.diagnoses.length > 0) {
+      setDiagnoses(prev => {
+        const base = prev.filter(d => d.description.trim());
+        return [...base, ...r.diagnoses];
+      });
+      markDirty();
+    }
+    voice.reset();
+  }, [voice]);
 
   const [patientName, setPatientName] = useState('');
   const [patientDni, setPatientDni] = useState('');
@@ -442,7 +524,77 @@ export const ConsultationPage: React.FC = () => {
               </div>
 
               <div className="form-section" style={{ marginTop: '1rem' }}>
-                <div className="section-title"><Heart size={18} /> Anamnesis (Motivo y Síntomas)</div>
+                <div className="section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span><Heart size={18} /> Anamnesis (Motivo y Síntomas)</span>
+
+                  {/* ── Botón de Dictado por Voz ────────────────────────── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {voice.error && (
+                      <span style={{ fontSize: '0.75rem', color: '#ef4444', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {voice.error}
+                      </span>
+                    )}
+
+                    {/* Transcript en vivo */}
+                    {voice.isRecording && voice.transcript && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+                        "{voice.transcript}"
+                      </span>
+                    )}
+
+                    {/* Botón principal */}
+                    <button
+                      id="btn-voice-dictado"
+                      type="button"
+                      onClick={voice.toggleRecording}
+                      disabled={voice.isProcessing || !voice.isSupported}
+                      title={voice.isSupported ? (voice.isRecording ? 'Detener dictado' : 'Dictar con voz') : 'Navegador no compatible'}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.4rem',
+                        padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none',
+                        cursor: voice.isSupported ? 'pointer' : 'not-allowed',
+                        fontSize: '0.825rem', fontWeight: 600, transition: 'all 0.2s',
+                        background: voice.isRecording
+                          ? 'rgba(239,68,68,0.12)'
+                          : voice.isProcessing
+                          ? 'rgba(99,102,241,0.12)'
+                          : 'rgba(99,102,241,0.1)',
+                        color: voice.isRecording ? '#ef4444' : '#6366f1',
+                        boxShadow: voice.isRecording ? '0 0 0 2px rgba(239,68,68,0.3)' : 'none',
+                        animation: voice.isRecording ? 'pulse 1.5s infinite' : 'none',
+                      }}
+                    >
+                      {voice.isProcessing ? (
+                        <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Analizando...</>
+                      ) : voice.isRecording ? (
+                        <><MicOff size={15} /> Detener dictado</>
+                      ) : (
+                        <><Mic size={15} /> Dictar con voz</>
+                      )}
+                    </button>
+
+                    {/* Botón "Aplicar resultado" aparece cuando hay resultado listo */}
+                    {voice.result && !voice.isProcessing && (
+                      voice.result.reason || voice.result.symptoms ||
+                      voice.result.findings.length > 0 || voice.result.diagnoses.length > 0
+                    ) && (
+                      <button
+                        id="btn-voice-apply"
+                        type="button"
+                        onClick={handleVoiceApply}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.4rem',
+                          padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none',
+                          cursor: 'pointer', fontSize: '0.825rem', fontWeight: 600,
+                          background: 'rgba(34,197,94,0.12)', color: '#16a34a',
+                        }}
+                      >
+                        ✓ Aplicar resultado
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="field-group">
                   <label className="field-label">Ocupación del Paciente</label>
                   <input className="input-field" type="text" value={triage.occupation} onChange={e => { setTriage(p => ({ ...p, occupation: e.target.value })); markDirty(); }} placeholder="Profesión u oficio..." />
