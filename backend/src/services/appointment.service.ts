@@ -2,11 +2,18 @@ import prisma from '../db/prisma';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../types/dtos';
 
 export class AppointmentService {
-  async getAll(clinicId: number) {
+  async getAll(clinicId: number, page = 1, limit = 100) {
     return prisma.appointment.findMany({
       where: { clinicId },
-      include: { patient: true, doctor: true, office: true, consultation: true }
+      include: { patient: true, doctor: true, office: true, consultation: true },
+      orderBy: { datetime: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+  }
+
+  async count(clinicId: number) {
+    return prisma.appointment.count({ where: { clinicId } });
   }
 
   async getById(id: number, clinicId: number) {

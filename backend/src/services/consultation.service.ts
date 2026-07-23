@@ -1,8 +1,9 @@
 import prisma from '../db/prisma';
+import { ExamTypes } from '@prisma/client';
 import { CreateConsultationDto, UpdateConsultationDto } from '../types/dtos';
 
 export class ConsultationService {
-  async getAll(clinicId: number) {
+  async getAll(clinicId: number, page = 1, limit = 100) {
     return prisma.consultation.findMany({
       where: { clinicId },
       include: { 
@@ -14,8 +15,15 @@ export class ConsultationService {
         treatments: true,
         examsRequested: true,
         examsAnalyzed: true
-      }
+      },
+      orderBy: { datetime: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+  }
+
+  async count(clinicId: number) {
+    return prisma.consultation.count({ where: { clinicId } });
   }
 
   async getById(id: number, clinicId: number) {
@@ -148,9 +156,9 @@ export class ConsultationService {
         });
         for (const item of exams) {
           if (item.id) {
-            await tx.exam.update({ where: { id: item.id }, data: { name: item.name, type: item.type, referenceValues: item.referenceValues } });
+            await tx.exam.update({ where: { id: item.id }, data: { name: item.name, type: item.type as ExamTypes, referenceValues: item.referenceValues } });
           } else {
-            await tx.exam.create({ data: { requestedInConsultationId: id, name: item.name, type: item.type, referenceValues: item.referenceValues } });
+            await tx.exam.create({ data: { requestedInConsultationId: id, name: item.name, type: item.type as ExamTypes, referenceValues: item.referenceValues } });
           }
         }
       }

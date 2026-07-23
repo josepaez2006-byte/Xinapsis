@@ -1,11 +1,12 @@
 // ============================================================
 //  useVoiceToText – Hook reutilizable (Xinapsis)
 //
-//  Dependencia requerida: @google/genai
+//  Llama al backend proxy /api/ai/dictado en lugar de
+//  llamar a Gemini directamente desde el frontend.
 // ============================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { api } from '../utils/api';
 import type {
   UseVoiceToTextOptions,
   VoiceToTextState,
@@ -23,9 +24,7 @@ export function useVoiceToText<T>(
   options: UseVoiceToTextOptions<T>
 ): VoiceToTextState<T> & VoiceToTextActions {
   const {
-    apiKey,
     language = 'es-ES',
-    model = 'gemini-2.5-flash',
     buildPrompt,
     parseResponse,
     initialResult = null,
@@ -79,27 +78,22 @@ export function useVoiceToText<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
+  // Llama al proxy del backend para procesar el dictado con Gemini
   const processText = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
-      if (!apiKey) { setError('API Key de Gemini no configurada.'); return; }
 
       setIsProcessing(true);
       setError(null);
 
       try {
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model,
-          contents: buildPrompt(text),
-          config: { responseMimeType: 'application/json' },
+        // El prompt se construye en el frontend pero el API Key queda en el servidor
+        const prompt = buildPrompt(text);
+        const parsed = await api.post<Record<string, unknown>>('/ai/dictado', {
+          transcript: text,
+          prompt,
         });
-
-        const jsonText = response.text;
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText) as Record<string, unknown>;
-          setResult(parseResponse(parsed));
-        }
+        setResult(parseResponse(parsed));
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Error desconocido';
         console.error('[useVoiceToText] error IA:', err);
@@ -108,7 +102,7 @@ export function useVoiceToText<T>(
         setIsProcessing(false);
       }
     },
-    [apiKey, model, buildPrompt, parseResponse]
+    [buildPrompt, parseResponse]
   );
 
   const toggleRecording = useCallback(() => {

@@ -7,6 +7,7 @@ interface User {
   clinicId: number | null;
   doctorId?: number | null;
   assistantId?: number | null;
+  laboratoryStaffId?: number | null;
   firstName?: string | null;
   lastName?: string | null;
 }

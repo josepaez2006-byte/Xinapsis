@@ -7,31 +7,30 @@ import { RegisterDto, LoginDto, AllowedRole } from '../types/dtos';
 const ALLOWED_ROLES: AllowedRole[] = ['ADMIN', 'DOCTOR', 'ASSISTANT', 'LABORATORY', 'SUPER_DOCTOR'];
 
 export class AuthService {
-  async register(data: RegisterDto, requestingUserRole?: string) {
-    const { email, password, roleName, doctorData, assistantData } = data;
-
+  // ── Validación compartida entre register y registerForClinic ─────────────────
+  private validateRegisterPayload(
+    email: string | undefined,
+    password: string | undefined,
+    roleName: string | undefined,
+    requestingUserRole?: string
+  ): void {
     if (!email || !password || !roleName) {
       throw new Error('Email, password and roleName are required');
     }
-
-    if (roleName as string === 'SUPER_ADMIN') {
+    if (roleName === 'SUPER_ADMIN') {
       throw new Error('SUPER_ADMIN users cannot be created through the API');
     }
-
-    // Validar que el rol solicitado está en la whitelist
-    if (!ALLOWED_ROLES.includes(roleName)) {
+    if (!ALLOWED_ROLES.includes(roleName as AllowedRole)) {
       throw new Error(`Invalid role. Allowed roles: ${ALLOWED_ROLES.join(', ')}`);
     }
-
-    // Solo SUPER_ADMIN puede crear otro ADMIN
     if (roleName === 'ADMIN' && requestingUserRole !== 'SUPER_ADMIN') {
       throw new Error('Only SUPER_ADMIN can create ADMIN users');
     }
+  }
 
-    // Validar que roles como DOCTOR/ASSISTANT/SUPER_DOCTOR requieren contexto de clínica
-    if (roleName === 'DOCTOR' || roleName === 'ASSISTANT' || roleName === 'SUPER_DOCTOR') {
-      throw new Error(`Cannot create ${roleName} without a clinic context. Use registerForClinic instead.`);
-    }
+  async register(data: RegisterDto, requestingUserRole?: string) {
+    const { email, password, roleName } = data;
+    this.validateRegisterPayload(email, password, roleName, requestingUserRole);
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('User already exists');
@@ -63,24 +62,7 @@ export class AuthService {
 
   async registerForClinic(data: RegisterDto, clinicId: number, requestingUserRole: string) {
     const { email, password, roleName, doctorData, assistantData } = data;
-
-    if (!email || !password || !roleName) {
-      throw new Error('Email, password and roleName are required');
-    }
-
-    if (roleName as string === 'SUPER_ADMIN') {
-      throw new Error('SUPER_ADMIN users cannot be created through the API');
-    }
-
-    // Validar que el rol solicitado está en la whitelist
-    if (!ALLOWED_ROLES.includes(roleName)) {
-      throw new Error(`Invalid role. Allowed roles: ${ALLOWED_ROLES.join(', ')}`);
-    }
-
-    // Solo SUPER_ADMIN puede crear otro ADMIN
-    if (roleName === 'ADMIN' && requestingUserRole !== 'SUPER_ADMIN') {
-      throw new Error('Only SUPER_ADMIN can create ADMIN users');
-    }
+    this.validateRegisterPayload(email, password, roleName, requestingUserRole);
 
     // Verificar que la clínica existe y está activa
     const clinic = await prisma.clinic.findUnique({ where: { id: clinicId } });

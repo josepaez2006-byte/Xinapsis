@@ -2,11 +2,18 @@ import prisma from '../db/prisma';
 import { CreatePatientDto, UpdatePatientDto } from '../types/dtos';
 
 export class PatientService {
-  async getAll(clinicId: number) {
+  async getAll(clinicId: number, page = 1, limit = 100) {
     return prisma.patient.findMany({
       where: { clinicId },
-      include: { medicalHistory: true }
+      include: { medicalHistory: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+  }
+
+  async count(clinicId: number) {
+    return prisma.patient.count({ where: { clinicId } });
   }
 
   async getById(id: number, clinicId: number) {

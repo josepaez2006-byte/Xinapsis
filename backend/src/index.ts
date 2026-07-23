@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -24,6 +24,13 @@ app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 app.use('/api', apiRoutes);
+
+// ── Middleware global de errores ─────────────────────────────────────────────
+// Debe estar después de todas las rutas
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Global Error Handler]', err.stack || err.message);
+  res.status(500).json({ message: err.message || 'Internal server error' });
+});
 
 app.listen(port, () => {
   console.log(`Xinapsis backend listening on port ${port}`);

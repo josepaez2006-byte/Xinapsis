@@ -6,7 +6,13 @@ export class PatientController {
   async getAll(req: AuthRequest, res: Response) {
     try {
       const clinicId = req.user!.clinicId!;
-      res.json(await patientService.getAll(clinicId));
+      const page  = parseInt(req.query.page  as string || '1',   10);
+      const limit = parseInt(req.query.limit as string || '100', 10);
+      const [data, total] = await Promise.all([
+        patientService.getAll(clinicId, page, limit),
+        patientService.count(clinicId),
+      ]);
+      res.json({ data, total, page, limit });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

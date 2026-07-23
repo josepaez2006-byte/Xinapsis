@@ -5,7 +5,13 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 export class AppointmentController {
   async getAll(req: AuthRequest, res: Response) {
     try {
-      res.json(await appointmentService.getAll(req.user!.clinicId!));
+      const page  = parseInt(req.query.page  as string || '1',   10);
+      const limit = parseInt(req.query.limit as string || '100', 10);
+      const [data, total] = await Promise.all([
+        appointmentService.getAll(req.user!.clinicId!, page, limit),
+        appointmentService.count(req.user!.clinicId!),
+      ]);
+      res.json({ data, total, page, limit });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

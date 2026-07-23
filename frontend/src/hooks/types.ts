@@ -21,9 +21,7 @@ export interface VoiceToTextActions {
 
 /** Opciones de configuración del hook */
 export interface UseVoiceToTextOptions<T> {
-  apiKey: string;
   language?: string;
-  model?: string;
   buildPrompt: (transcript: string) => string;
   parseResponse: (json: Record<string, unknown>) => T;
   initialResult?: T | null;

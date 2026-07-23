@@ -13,6 +13,7 @@ import examRoutes from './exam.routes';
 import userRoutes from './user.routes';
 import clinicRoutes from './clinic.routes';
 import labExamRoutes from './lab-exam.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use('/diagnoses', diagnosisRoutes);
 router.use('/treatments', treatmentRoutes);
 router.use('/exams', examRoutes);
 router.use('/lab-exams', labExamRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

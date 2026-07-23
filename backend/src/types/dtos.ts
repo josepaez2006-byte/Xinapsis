@@ -107,7 +107,7 @@ export interface CreateConsultationDto {
   findings?: { description: string }[];
   diagnoses?: { description: string; codeCIE10?: string }[];
   treatments?: { medication: string; dosage?: string; instructions?: string }[];
-  exams?: { name: string; type?: 'LABORATORIO' | 'IMAGNES' | 'OTROS'; referenceValues?: string }[];
+  exams?: { name: string; type?: 'LABORATORIO' | 'IMAGENES' | 'OTROS'; referenceValues?: string }[];
 }
 
 export interface UpdateConsultationDto {
@@ -164,7 +164,7 @@ export interface CreateClinicAdminDto {
 export interface CreateExamDto {
   requestedInConsultationId: number;
   name: string;
-  type?: 'LABORATORIO' | 'IMAGNES' | 'OTROS';
+  type?: 'LABORATORIO' | 'IMAGENES' | 'OTROS';
   status?: string;
   referenceValues?: string;
   labExamDetailId?: number;
@@ -172,7 +172,7 @@ export interface CreateExamDto {
 
 export interface UpdateExamDto {
   name?: string;
-  type?: 'LABORATORIO' | 'IMAGNES' | 'OTROS';
+  type?: 'LABORATORIO' | 'IMAGENES' | 'OTROS';
   analyzedInConsultationId?: number;
   status?: string;
   referenceValues?: string;

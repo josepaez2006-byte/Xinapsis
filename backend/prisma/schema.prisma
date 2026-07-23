@@ -293,7 +293,7 @@ model Treatment {
 
 enum ExamTypes {
   LABORATORIO
-  IMAGNES
+  IMAGENES
   OTROS
 }
 

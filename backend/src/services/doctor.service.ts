@@ -1,11 +1,18 @@
 import prisma from '../db/prisma';
 
 export class DoctorService {
-  async getAll(clinicId: number) {
+  async getAll(clinicId: number, page = 1, limit = 100) {
     return prisma.doctor.findMany({
       where: { clinicId },
-      include: { user: { select: { id: true, email: true } } }
+      include: { user: { select: { id: true, email: true } } },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+  }
+
+  async count(clinicId: number) {
+    return prisma.doctor.count({ where: { clinicId } });
   }
 
   async getById(id: number, clinicId: number) {
